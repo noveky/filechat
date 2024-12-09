@@ -1,3 +1,4 @@
+mdformat
 openai
 openai_streaming
 python-dotenv
