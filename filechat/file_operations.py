@@ -16,6 +16,11 @@ def get_section_pattern_for_roles(roles: typing.Iterable[str]) -> re.Pattern[str
     )
 
 
+def match_front_matter(text: str) -> re.Match[str] | None:
+    front_matter_pattern = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
+    return re.search(front_matter_pattern, text)
+
+
 def parse_file(file_path: str) -> tuple[dict, list[dict]]:
     """
     Parse the file containing configuration (optional) and messages and return the config and messages.
@@ -24,17 +29,15 @@ def parse_file(file_path: str) -> tuple[dict, list[dict]]:
     with open(file_path, "r", encoding="utf-8") as file:
         text = file.read()
 
-    config_pattern = re.compile(r"\A---\n(.*?)\n---", re.DOTALL)
-    config_match = re.search(config_pattern, text)
     config = {}
-    if config_match:
+    if front_matter_match := match_front_matter(text):
         try:
-            config = yaml.safe_load(config_match.group(1))
+            config = yaml.safe_load(front_matter_match.group(1))
         except yaml.YAMLError as e:
             raise ValueError(f"Error parsing config: {e}")
         if not isinstance(config, dict):
             raise ValueError("Invalid config format. Expected a dictionary.")
-        text = text[config_match.end() :]
+        text = text[front_matter_match.end() :]
 
     section_pattern = get_section_pattern_for_roles(roles)
     section_matches = re.findall(section_pattern, text)
@@ -66,9 +69,18 @@ def format_file(file_path: str) -> None:
 
     with open(file_path, "r", encoding="utf-8") as file:
         text = file.read()
+
+    # Extract the front matter (if any)
+    if front_matter_match := match_front_matter(text):
+        text = text[front_matter_match.end() :]
+
+    # Format the rest of the text with a Markdown formatter
     formatted_text = mdformat.text(text)
-    if text == formatted_text:
-        return
+
+    # Insert the front matter back (if any)
+    if front_matter_match:
+        formatted_text = str(front_matter_match.group(0)) + "\n" + formatted_text
+
     with open(file_path, "w", encoding="utf-8") as file:
         file.write(formatted_text)
 
