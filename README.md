@@ -10,7 +10,7 @@ https://www.python.org/downloads/release/python-3122/
 
 ### Python packages
 
-See [requirements.txt](requirements.txt).
+See [`requirements.txt`](requirements.txt).
 
 ### Visual Studio Code
 
@@ -27,18 +27,18 @@ https://code.visualstudio.com/
     ```
 
 2.  Ensure that Python and `pip` are installed on your system.
-3.  Create a Python virtual environment in the repository. _(optional)_
+3.  Create a Python virtual environment in the repository. _(Optional)_
 4.  Install project dependencies:
 
     ```sh
     pip install -r requirements.txt
     ```
 
-### Building a pipeline with VS Code
+### Building a workflow in VS Code
 
 1.  Open the repository with VS Code.
 
-2.  Install the [Code Runner](https://marketplace.visualstudio.com/items?itemName=formulahendry.code-runner) extension (`formulahendry.code-runner`) for VS Code.
+2.  Install the [_Code Runner_](https://marketplace.visualstudio.com/items?itemName=formulahendry.code-runner) extension (`formulahendry.code-runner`) for VS Code.
 
 3.  Specify the run code command for Markdown files in `.vscode/settings.json`.
 
@@ -63,6 +63,10 @@ https://code.visualstudio.com/
             }
         }
         ```
+
+4.  Install the [_Markdown All in One_](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one) extension (`yzhang.markdown-all-in-one`).
+
+    This extension enables you to open a preview panel for a Markdown file (default keyboard shortcut is `Ctrl + K` `V`), where you can read the rendered Markdown content more easily.
 
 ### Configuring the app
 
@@ -115,7 +119,7 @@ Here is a quick guide to get yourself started:
     Tell me a joke.
     ```
 
-3.  Save the file, and run _Filechat_ on the current file by hitting "Run Code" (keyboard shortcut is by default `Ctrl+Alt+N`).
+3.  Save the file, and run _Filechat_ on the current file by hitting "Run Code" (default keyboard shortcut is `Ctrl + Alt + N`).
 
     Non-structured file content is regarded as a user message, so the file gets formatted into a `# User` heading followed by the original content.
 
