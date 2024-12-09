@@ -76,12 +76,12 @@ To access a chat model, you need to specify the OpenAI API key and base URL.
 
 There are three ways to do that:
 
-1.  Set system environment variables `OPENAI_API_KEY` and `OPENAI_API_URL` .
+1.  Set system environment variables `OPENAI_API_KEY` and `OPENAI_BASE_URL` .
 2.  Create a `.env` file in the root directory of the repository and set the two environment variables in the file.
 
     ```env
     OPENAI_API_KEY=<your_api_key>
-    OPENAI_API_URL=<your_base_url>
+    OPENAI_BASE_URL=<your_base_url>
     ```
 
 3.  Specify the API key and the base URL in the app configuration file introduced below.
@@ -105,7 +105,7 @@ stream_for_file: # Whether to append the response to the file token by token or 
 
 # ---- OpenAI API ----
 api_key: # OpenAI API key (overrides the environment variable `OPENAI_API_KEY` if specified)
-base_url: # OpenAI base URL (overrides the environment variable `OPENAI_API_URL` if specified)
+base_url: # OpenAI base URL (overrides the environment variable `OPENAI_BASE_URL` if specified)
 ```
 
 ### Chatting with an LLM in a file

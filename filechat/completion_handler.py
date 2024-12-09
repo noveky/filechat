@@ -6,7 +6,7 @@ import openai, openai.types.chat, openai_streaming, typing, dotenv, os
 dotenv.load_dotenv()
 
 api_key = app_config.get("api_key", os.getenv("OPENAI_API_KEY"))
-base_url = app_config.get("base_url", os.getenv("OPENAI_API_URL"))
+base_url = app_config.get("base_url", os.getenv("OPENAI_BASE_URL"))
 
 
 async def content_handler_with_config(
