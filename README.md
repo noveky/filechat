@@ -89,11 +89,17 @@ You can customize the app configurations in `config.yaml`.
 Here is a template, and you can choose what you want to specify:
 
 ```yaml
+# ---- Chat Completion ----
 model: # Name of your preferred completion model
 temperature: # Your preferred `temperature` parameter for the model (optional)
+max_tokens: # Your preferred `max_tokens` parameter for the model (optional)
+
+# ---- App Behaviors ----
 max_retries: # How many times to retry (default is 3)
 print_response: # Whether to print the response in standard output (default is true)
 stream_for_file: # Whether to append the response to the file token by token or as a whole (default is true)
+
+# ---- OpenAI API ----
 api_key: # OpenAI API key (overrides the environment variable `OPENAI_API_KEY` if specified)
 base_url: # OpenAI base URL (overrides the environment variable `OPENAI_API_URL` if specified)
 ```
