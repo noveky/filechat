@@ -1,14 +1,20 @@
 # Filechat
 
+A file-based AI chat tool designed to integrate with Visual Studio Code (VS Code), enabling you to engage with a Large Language Model (LLM) directly within a Markdown file.
+
 ## Requirements
 
 ### Python 3.12.2
 
 https://www.python.org/downloads/release/python-3122/
 
-### Packages
+### Python packages
 
 See [requirements.txt](requirements.txt).
+
+### Visual Studio Code
+
+https://code.visualstudio.com/
 
 ## Usage
 
@@ -28,9 +34,9 @@ See [requirements.txt](requirements.txt).
     pip install -r requirements.txt
     ```
 
-### Building a pipeline with Visual Studio Code
+### Building a pipeline with VS Code
 
-1.  Open the repository with Visual Studio Code (VS Code).
+1.  Open the repository with VS Code.
 
 2.  Install the [Code Runner](https://marketplace.visualstudio.com/items?itemName=formulahendry.code-runner) extension (`formulahendry.code-runner`) for VS Code.
 
@@ -127,16 +133,7 @@ Here is a quick guide to get yourself started:
 
 4.  Type your reply message and follow step 3 to continue chatting.
 
-### Adding file-wise configurations and system prompt
-
-At the very beginning of your chat file, you can include a front matter section. This section is enclosed within triple dashes (`---`) and is written in YAML format. It allows you to specify file-wise configurations that override the app configurations.
-
-```yaml
----
-model: gpt-4o
-temperature: 0.7
----
-```
+### Adding a system prompt
 
 Besides user messages, you can optionally include a system prompt, labeled with a `# System` heading. This is a special section that sets the context or provides initial instructions for the model before processing user inputs.
 
@@ -148,4 +145,15 @@ This is a system prompt.
 # User
 
 This is a user message.
+```
+
+### Adding file-wise configurations
+
+At the very beginning of your chat file, you can include a front matter section. This section is enclosed within triple dashes (`---`) and is written in YAML format. It allows you to specify file-wise configurations that override the app configurations.
+
+```yaml
+---
+model: gpt-4o
+temperature: 0.7
+---
 ```
