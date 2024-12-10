@@ -47,6 +47,7 @@ https://code.visualstudio.com/
         ```json
         // .vscode/settings.json
         {
+            "code-runner.runInTerminal": true,
             "code-runner.executorMap": {
                 "markdown": "cd $dir && ..\\run.ps1 $fullFileName"
             }
@@ -58,6 +59,7 @@ https://code.visualstudio.com/
         ```json
         // .vscode/settings.json
         {
+            "code-runner.runInTerminal": true,
             "code-runner.executorMap": {
                 "markdown": "cd $dir && bash ../run.sh $fullFileName"
             }
