@@ -20,7 +20,6 @@ def format_h1(text: str) -> str:
     last_match_end = 0
     formatted_text = ""
     for heading_match in heading_matches:
-        print(heading_match.group(1))
         formatted_text += (
             text[last_match_end : heading_match.start()]
             + "\n"
