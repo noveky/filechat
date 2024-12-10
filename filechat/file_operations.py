@@ -1,4 +1,6 @@
-import re, yaml, typing, openai.types.chat, mdformat
+from . import markdown_formatter
+
+import re, yaml, typing, openai.types.chat
 
 
 role_heading_map = {"system": "System", "user": "User", "assistant": "Assistant"}
@@ -30,7 +32,9 @@ def parse_file(file_path: str) -> tuple[dict, list[dict]]:
         text = file.read()
 
     config = {}
-    if front_matter_match := match_front_matter(text):
+    front_matter_pattern = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
+    front_matter_match = re.search(front_matter_pattern, text)
+    if front_matter_match:
         try:
             config = yaml.safe_load(front_matter_match.group(1))
         except yaml.YAMLError as e:
@@ -70,19 +74,8 @@ def format_file(file_path: str) -> None:
     with open(file_path, "r", encoding="utf-8") as file:
         text = file.read()
 
-    # Extract the front matter (if any)
-    if front_matter_match := match_front_matter(text):
-        text = text[front_matter_match.end() :]
-
-    # Format the rest of the text with a Markdown formatter
-    formatted_text = mdformat.text(text)
-
-    # Insert the front matter back (if any)
-    if front_matter_match:
-        formatted_text = str(front_matter_match.group(0)) + "\n" + formatted_text
-
     with open(file_path, "w", encoding="utf-8") as file:
-        file.write(formatted_text)
+        file.write(markdown_formatter.format_text(text))
 
 
 def write_messages_to_file(

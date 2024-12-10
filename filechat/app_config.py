@@ -28,4 +28,6 @@ def get_required(
         if key not in value:
             raise exception
         value = value[key]
+    if value is None:
+        raise exception
     return value
