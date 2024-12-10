@@ -1,16 +1,13 @@
-from . import markdown_formatter
+from . import chat_format, markdown_formatter
 
 import re, yaml, typing, openai.types.chat
 
 
-role_heading_map = {"system": "System", "user": "User", "assistant": "Assistant"}
-heading_role_map = {v: k for k, v in role_heading_map.items()}
-roles = set(role_heading_map.keys())
-
-
 def get_section_pattern_for_roles(roles: typing.Iterable[str]) -> re.Pattern[str]:
     role_heading_pattern = "|".join(
-        heading for role, heading in role_heading_map.items() if role in roles
+        heading
+        for role, heading in chat_format.role_heading_map.items()
+        if role in roles
     )
     return re.compile(
         rf"(?:\A\n*|\n\n)# ({role_heading_pattern})(?:\n*\Z|\n\n(.*?)(?=\n\n# (?:{role_heading_pattern})(?:\n\n|\n*\Z)|\n*\Z))",
@@ -43,13 +40,16 @@ def parse_file(file_path: str) -> tuple[dict, list[dict]]:
             raise ValueError("Invalid config format. Expected a dictionary.")
         text = text[front_matter_match.end() :]
 
-    section_pattern = get_section_pattern_for_roles(roles)
+    section_pattern = get_section_pattern_for_roles(chat_format.roles)
     section_matches = re.findall(section_pattern, text)
 
     messages = [
-        {"role": heading_role_map[str(heading)], "content": str(content).strip()}
+        {
+            "role": chat_format.heading_role_map[str(heading)],
+            "content": str(content).strip(),
+        }
         for heading, content in section_matches
-        if heading in heading_role_map
+        if heading in chat_format.heading_role_map
     ]
 
     if not messages:
@@ -85,7 +85,7 @@ def write_messages_to_file(
     if config:
         text += f"---\n{yaml.dump(config).strip()}\n---\n\n"
     text += "\n".join(
-        f"# {role_heading_map[message["role"]]}\n\n{message["content"]}\n"
+        f"# {chat_format.role_heading_map[message["role"]]}\n\n{message["content"]}\n"
         for message in messages
     )
     with open(file_path, "w", encoding="utf-8") as file:
@@ -94,7 +94,7 @@ def write_messages_to_file(
 
 def append_heading_to_file(file_path: str, role: str) -> None:
     with open(file_path, "a", encoding="utf-8") as file:
-        file.write(f"\n# {role_heading_map[role]}\n\n")
+        file.write(f"\n# {chat_format.role_heading_map[role]}\n\n")
 
 
 def append_token_to_file(file_path: str, text: str) -> None:
@@ -106,7 +106,9 @@ def append_message_to_file(
     file_path: str, message: openai.types.chat.ChatCompletionMessage
 ) -> None:
     with open(file_path, "a", encoding="utf-8") as file:
-        file.write(f"\n# {role_heading_map[message.role]}\n\n{message.content}\n")
+        file.write(
+            f"\n# {chat_format.role_heading_map[message.role]}\n\n{message.content}\n"
+        )
 
 
 def remove_last_message_from_file(
@@ -119,14 +121,14 @@ def remove_last_message_from_file(
     with open(file_path, "r", encoding="utf-8") as file:
         text = file.read()
 
-    section_pattern = get_section_pattern_for_roles(roles)
+    section_pattern = get_section_pattern_for_roles(chat_format.roles)
     section_matches = list(re.finditer(section_pattern, text))
 
     if not section_matches:
         return
 
     last_match = section_matches[-1]
-    if heading_role_map[str(last_match.group(1))] not in match_roles:
+    if chat_format.heading_role_map[str(last_match.group(1))] not in match_roles:
         return
 
     text = text[: last_match.start()] + "\n"
