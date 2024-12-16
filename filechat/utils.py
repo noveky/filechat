@@ -137,27 +137,38 @@ def extract_yaml(text: str) -> tuple[str, typing.Any]:
     return yaml_code, data
 
 
-def verify_data(data: typing.Any, schema: type | dict | list | typing.Any) -> bool:
+def match_type(data: typing.Any, schema: type | dict | list | typing.Any) -> bool:
     if isinstance(schema, type):
         return isinstance(data, schema)
-    if type(data) != type(schema):
+    elif origin := typing.get_origin(schema) in {list, tuple, set, dict}:
+        args = typing.get_args(schema)
+        if not isinstance(data, origin):
+            return False
+        elif origin in {list, tuple, set, dict} and len(args) == 1:
+            return all(match_type(e, args[0]) for e in data)
+        elif origin == dict and len(args) == 2:
+            assert isinstance(data, dict)
+            return all(
+                match_type(k, args[0]) and match_type(v, args[1])
+                for k, v in data.items()
+            )
+    elif type(data) != type(schema):
         return False
-    if isinstance(schema, dict):
+    elif isinstance(schema, dict):
         for key, value in schema.items():
             if key not in data:
                 return False
-            if not verify_data(data[key], value):
+            if not match_type(data[key], value):
                 return False
-    elif isinstance(schema, list):
+        return True
+    elif isinstance(schema, list | tuple):
         if len(data) != len(schema):
             return False
         for d, p in zip(data, schema):
-            if not verify_data(d, p):
+            if not match_type(d, p):
                 return False
-    else:
-        if data != schema:
-            return False
-    return True
+        return True
+    raise ValueError(f"Invalid schema type: {type(schema)}")
 
 
 def encode_image_to_base64_data_uri(file_path):

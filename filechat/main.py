@@ -118,9 +118,7 @@ async def main():
 
         # Request completion using the completion handler
         print("Requesting completion...")
-        response_message = await completion_handler.request_completion(
-            messages=messages, config=config
-        )
+        await completion_handler.request_completion(messages=messages, config=config)
     except Exception as e:
         utils.log_error(e)
 

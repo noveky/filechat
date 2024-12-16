@@ -9,30 +9,29 @@ api_key = app_config.get("api_key", os.getenv("OPENAI_API_KEY"))
 base_url = app_config.get("base_url", os.getenv("OPENAI_BASE_URL"))
 
 
-async def content_handler_with_config(
-    config: dict[str, typing.Any], content: typing.AsyncGenerator[str, None]
-):
+async def stream_handler_with_config(
+    config: dict[str, typing.Any], stream: typing.AsyncGenerator[str, None]
+) -> str:
     first_token_received = False
-    try:
-        async for token in content:
-            if not first_token_received:
-                first_token_received = True
-                for handler in config.get("stream_response_start_handlers", []):
-                    handler()
-            for handler in config.get("stream_response_token_handlers", []):
-                handler(token)
-    except:
-        pass
-    finally:
-        for handler in config.get("stream_response_end_handlers", []):
-            handler()
+    tokens = []
+    async for token in stream:
+        if not first_token_received:
+            first_token_received = True
+            for handler in config.get("stream_response_start_handlers", []):
+                handler()
+        for handler in config.get("stream_response_token_handlers", []):
+            handler(token)
+        tokens.append(token)
+    for handler in config.get("stream_response_end_handlers", []):
+        handler()
+    return "".join(tokens)
 
 
 async def request_completion(
     messages: list[str], config: dict[str, typing.Any] = {}
-) -> openai.types.chat.ChatCompletionMessage:
-    async def content_handler(content: typing.AsyncGenerator[str, None]):
-        await content_handler_with_config(config, content)
+) -> str:
+    async def stream_handler(stream: typing.AsyncGenerator[str, None]):
+        return await stream_handler_with_config(config, stream)
 
     client = openai.AsyncOpenAI(
         api_key=config.get("api_key", api_key),
@@ -50,11 +49,12 @@ async def request_completion(
             },
         )
 
-        response = await openai_streaming.process_response(
-            response=response,
-            content_func=content_handler,
+        stream = (
+            chunk.choices[0].delta.content
+            async for chunk in response
+            if chunk.choices and chunk.choices[0].delta.content is not None
         )
-        return response[1]
+        return await stream_handler(stream)
 
     return await utils.try_loop_async(
         try_func,
