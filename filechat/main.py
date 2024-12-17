@@ -118,13 +118,14 @@ async def main():
 
         # Request completion using the completion handler
         print("Requesting completion...")
-        await completion_handler.request_completion(messages=messages, config=config)
+        response_message = await completion_handler.request_completion(
+            messages=messages, config=config
+        )
     except Exception as e:
         utils.log_error(e)
 
 
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        utils.log_error("Process interrupted by user.")
+try:
+    asyncio.run(main())
+except KeyboardInterrupt:
+    utils.log_error("Process interrupted by user.")

@@ -1,29 +1,91 @@
-import typing, inspect, re, json, yaml, datetime, base64, os
+import typing, types, inspect, re, json, yaml, datetime, base64, os, uuid
 from termcolor import colored
 
 
-class ObjectEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.date):
-            return obj.isoformat()
-        elif hasattr(obj, "to_dict"):
-            return self.default(obj.to_dict())
-        elif hasattr(obj, "__dict__"):
-            d = dict(
-                (key, value)
-                for key, value in inspect.getmembers(obj)
-                if not key.startswith("__")
-                and not inspect.isabstract(value)
-                and not inspect.isbuiltin(value)
-                and not inspect.isfunction(value)
-                and not inspect.isgenerator(value)
-                and not inspect.isgeneratorfunction(value)
-                and not inspect.ismethod(value)
-                and not inspect.ismethoddescriptor(value)
-                and not inspect.isroutine(value)
-            )
-            return self.default(d)
-        return obj
+def open_file(path, mode):
+    return open(path, mode, encoding="utf-8")
+
+
+def generate_uuid() -> str:
+    return str(uuid.uuid4())
+
+
+def serialize(obj):
+    if isinstance(obj, datetime.date | datetime.datetime):
+        return obj.timestamp()
+    elif isinstance(obj, list | tuple | set):
+        return [serialize(e) for e in obj]
+    elif isinstance(obj, dict):
+        return dict((serialize(k), serialize(v)) for k, v in obj.items())
+    elif hasattr(obj, "__serialize__"):
+        return serialize(obj.__serialize__())
+    elif hasattr(obj, "__dict__"):
+        if hasattr(obj, "__serialization_exclusions__"):
+            skip_keys = obj.__serialization_exclusions__()
+        else:
+            skip_keys = set()
+        # d = {k: v for k, v in obj.__dict__.items() if k not in skip_keys}
+        d = {
+            k: v
+            for k, v in inspect.getmembers(obj)
+            if k not in skip_keys
+            and not (k.startswith("__") and k.endswith("__"))
+            and not inspect.isabstract(v)
+            and not inspect.isbuiltin(v)
+            and not inspect.isfunction(v)
+            and not inspect.isgenerator(v)
+            and not inspect.isgeneratorfunction(v)
+            and not inspect.ismethod(v)
+            and not inspect.ismethoddescriptor(v)
+            and not inspect.isroutine(v)
+        }
+        return serialize(d)
+    return obj
+
+
+def deserialize(data, target_type=typing.Any):
+    origin = typing.get_origin(target_type)
+    args = typing.get_args(target_type)
+    if target_type is typing.Any:
+        return data
+    elif origin == types.UnionType:
+        for t in args:
+            try:
+                return deserialize(data, t)
+            except:
+                pass
+        raise ValueError(f"Failed to deserialize data: {data} into {target_type}")
+    else:
+        try:
+            if data is None and target_type == types.NoneType:
+                return None
+            elif origin == typing.Literal and data in args:
+                return data
+            elif isinstance(data, float) and target_type == datetime.datetime:
+                return datetime.datetime.fromtimestamp(data)
+            elif isinstance(data, dict) and origin == dict and len(args) >= 2:
+                return dict(
+                    (deserialize(k, args[0]), deserialize(v, args[1]))
+                    for k, v in data.items()
+                )
+            elif isinstance(data, dict) and origin == dict and len(args) == 1:
+                return dict((deserialize(k, args[0]), v) for k, v in data.items())
+            elif isinstance(data, list | tuple | set | dict) and len(args) >= 1:
+                return origin(deserialize(e, args[0]) for e in data)
+            elif isinstance(data, dict) and target_type != dict and origin != dict:
+                return target_type(
+                    **dict(
+                        (k, deserialize(v, target_type.__annotations__[k]))
+                        for k, v in data.items()
+                        if k in target_type.__annotations__
+                    )
+                )
+            else:
+                return target_type(data)
+        except Exception as e:
+            raise ValueError(
+                f"Failed to deserialize data: {data} into {target_type}"
+            ) from e
 
 
 def ask_yes_no(question: str, default: bool | None = None) -> bool:
@@ -89,15 +151,15 @@ def try_loop(
 
 
 def dump_json(data: typing.Any, **kwargs) -> str:
-    return json.dumps(data, cls=ObjectEncoder, ensure_ascii=False, indent=4, **kwargs)
+    return json.dumps(data, default=serialize, ensure_ascii=False, indent=4, **kwargs)
 
 
 def dump_yaml(data: typing.Any, **kwargs) -> str:
     return yaml.dump(data, allow_unicode=True, **kwargs)
 
 
-def load_json(json_str: str) -> typing.Any:
-    return json.loads(json_str) if json_str.strip() else None
+def load_json(json_str: str, target_type=typing.Any) -> typing.Any:
+    return deserialize(json.loads(json_str) if json_str.strip() else None, target_type)
 
 
 def load_yaml(yaml_str: str) -> typing.Any:
@@ -140,18 +202,26 @@ def extract_yaml(text: str) -> tuple[str, typing.Any]:
 def match_type(data: typing.Any, schema: type | dict | list | typing.Any) -> bool:
     if isinstance(schema, type):
         return isinstance(data, schema)
-    elif origin := typing.get_origin(schema) in {list, tuple, set, dict}:
+    elif (origin := typing.get_origin(schema)) in {
+        list,
+        tuple,
+        set,
+        dict,
+        typing.Literal,
+    }:
         args = typing.get_args(schema)
-        if not isinstance(data, origin):
+        if origin == typing.Literal:
+            return data in args
+        elif not isinstance(data, origin):
             return False
-        elif origin in {list, tuple, set, dict} and len(args) == 1:
-            return all(match_type(e, args[0]) for e in data)
-        elif origin == dict and len(args) == 2:
+        elif origin == dict and len(args) >= 2:
             assert isinstance(data, dict)
             return all(
                 match_type(k, args[0]) and match_type(v, args[1])
                 for k, v in data.items()
             )
+        elif origin in {list, tuple, set, dict} and len(args) >= 1:
+            return all(match_type(e, args[0]) for e in data)
     elif type(data) != type(schema):
         return False
     elif isinstance(schema, dict):
@@ -168,13 +238,13 @@ def match_type(data: typing.Any, schema: type | dict | list | typing.Any) -> boo
             if not match_type(d, p):
                 return False
         return True
-    raise ValueError(f"Invalid schema type: {type(schema)}")
+    raise ValueError(f"Invalid schema: {schema}")
 
 
 def encode_image_to_base64_data_uri(file_path):
     # Determine the MIME type based on the file extension
     mime_type = None
-    extension = os.path.splitext(file_path)[1].lower()
+    extension = str(os.path.splitext(file_path)[1]).lower()
 
     if extension in {".jpg", ".jpeg"}:
         mime_type = "image/jpeg"
