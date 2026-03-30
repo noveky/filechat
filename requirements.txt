@@ -1,4 +1,6 @@
+httpx[socks]
 openai
+openai-streaming
 python-dotenv
 pyyaml
 termcolor

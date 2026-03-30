@@ -1,5 +1,17 @@
-# Change to the directory of the script
-Set-Location -Path $PSScriptRoot
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $ScriptDir
 
-# Execute the Python module with arguments
-python -m filechat.main @Args
+$VenvPython = Join-Path $ScriptDir ".venv/bin/python"
+
+if (Test-Path $VenvPython) {
+    $Python = $VenvPython
+} elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
+    $Python = (Get-Command python3).Source
+} elseif (Get-Command python -ErrorAction SilentlyContinue) {
+    $Python = (Get-Command python).Source
+} else {
+    Write-Error "No python interpreter found"
+    exit 1
+}
+
+& $Python -m filechat.main @args

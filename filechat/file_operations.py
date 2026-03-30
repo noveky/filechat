@@ -1,6 +1,10 @@
-from . import chat_format, markdown_formatter
+import re
+import typing
 
-import re, yaml, typing, openai.types.chat
+import openai.types.chat
+import yaml
+
+from . import chat_format, markdown_formatter
 
 
 def get_section_pattern_for_roles(roles: typing.Iterable[str]) -> re.Pattern[str]:
@@ -85,7 +89,7 @@ def write_messages_to_file(
     if config:
         text += f"---\n{yaml.dump(config).strip()}\n---\n\n"
     text += "\n".join(
-        f"# {chat_format.role_heading_map[message["role"]]}\n\n{message["content"]}\n"
+        f"# {chat_format.role_heading_map[message['role']]}\n\n{message['content']}\n"
         for message in messages
     )
     with open(file_path, "w", encoding="utf-8") as file:

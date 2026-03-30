@@ -61,14 +61,10 @@ https://code.visualstudio.com/
         {
             "code-runner.runInTerminal": true,
             "code-runner.executorMap": {
-                "markdown": "cd $dir && bash ../run.sh $fullFileName"
+                "markdown": "cd $dir && ../run.sh $fullFileName"
             }
         }
         ```
-
-4.  Install the [_Markdown All in One_](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one) extension (`yzhang.markdown-all-in-one`).
-
-    This extension enables you to open a preview panel for a Markdown file (default keyboard shortcut is `Ctrl + K` `V`), where you can read the rendered Markdown content more easily.
 
 ### Configuring the app
 

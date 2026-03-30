@@ -1,12 +1,32 @@
-from . import utils, app_config
+import os
+import typing
 
-import openai, openai.types.chat, openai_streaming, typing, dotenv, os
+import dotenv
+import httpx
+import openai
+import openai.types.chat
 
+from . import app_config, utils
 
 dotenv.load_dotenv()
 
 api_key = app_config.get("api_key", os.getenv("OPENAI_API_KEY"))
 base_url = app_config.get("base_url", os.getenv("OPENAI_BASE_URL"))
+
+
+def _create_http_client():
+    proxy = (
+        os.environ.get("all_proxy")
+        or os.environ.get("http_proxy")
+        or os.environ.get("HTTP_PROXY")
+        or os.environ.get("https_proxy")
+        or os.environ.get("HTTPS_PROXY")
+    )
+    return (
+        httpx.AsyncClient(proxy=proxy.replace("socks://", "socks5://"))
+        if proxy
+        else None
+    )
 
 
 async def stream_handler_with_config(
@@ -33,9 +53,12 @@ async def request_completion(
     async def stream_handler(stream: typing.AsyncGenerator[str, None]):
         return await stream_handler_with_config(config, stream)
 
+    http_client = _create_http_client()
+
     client = openai.AsyncOpenAI(
         api_key=config.get("api_key", api_key),
         base_url=config.get("base_url", base_url),
+        http_client=http_client,
     )
 
     async def try_func():
